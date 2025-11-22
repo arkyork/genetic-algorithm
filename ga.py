@@ -4,13 +4,12 @@ import random
 @dataclass
 class GA:
     
-    
     # 長さ
-    gene_length: int = 5
+    gene_length: int = 10
     
     # 集団のサイズ
     size: int = 10
-    generations: int = 30
+    generations: int = 2
     population: list[str] = field(init=False)
 
     # 突然変異や交叉
@@ -39,6 +38,7 @@ class GA:
     
     # 突然変異
     def mutate(self,gene: str) -> str:
+        new_gene = ""
         for bit in gene:
             if random.random() < self.mutation_rate:
                 new_gene += "1" if bit == "0" else "0"
@@ -50,5 +50,38 @@ class GA:
     def fitness(self, gene:str) -> int:
         x = int(gene, 2)  # 2進 → 10進
         return x ** 2
+    # 選択
+    def selection(self):
+        a,b = random.sample(self.population,2)
+        # トーナメント方式
+        return a if self.fitness(a) > self.fitness(b) else b
+
+    # アルゴリズムの実行
+    def run(self):
+        for generation in range(self.generations):
+            
+            # エリート個体の保存
+            elite = max(self.population, key=self.fitness)
+
+            new_population = []
+
+            while len(new_population) < self.size:
+                parent1 = self.selection()
+                parent2 = self.selection()
+                child1, child2 = self.cross_over(parent1, parent2)
+                new_population.append(self.mutate(child1))
+                if len(new_population) < self.size:
+                    new_population.append(self.mutate(child2))
+            
+
+
+            # 最良個体を置き換え
+            new_population[random.randrange(self.size)] = elite
+            self.population = new_population
+
+            # 現世代の最適解
+            best = max(self.population, key=self.fitness)
+            print(f"Generation {generation+1}: Best = {best} → {self.fitness(best)}")
     
-    
+        
+        return max(self.population, key=self.fitness)
